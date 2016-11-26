@@ -26,7 +26,7 @@ if (!isset($moodle_host)) {
     $moodle_host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : $_SERVER['SERVER_NAME'];
 }
 
-// MySQL DB names must not have points ('.') nor underscores ('_')
+// MySQL DB names must not have points ('.') nor Hyphen-minus ('-')
 $moodle_db = str_replace(".","_",$moodle_host);
 $moodle_db = str_replace("-","__",$moodle_db);
 $moodle_data_path = "[moodedatas-path]/{$moodle_db}";
