@@ -26,7 +26,7 @@ define('CLI_SCRIPT', true);
 require(__DIR__.'/../../config.php');
 require_once($CFG->libdir.'/clilib.php');
 
-list($options, $unrecognized) = cli_get_params(array('help' => false), array('h' => 'help'));
+list($options, $unrecognized) = cli_get_params(array('help' => false, 'tenant' => false), array('h' => 'help'));
 
 if ($unrecognized) {
     $unrecognized = implode("\n  ", $unrecognized);
@@ -39,6 +39,7 @@ if ($options['help']) {
 
 Options:
 -h, --help            Print out this help
+--tenant              Tenant domain in a multi-tenant installation
 
 Example:
 \$sudo -u www-data /usr/bin/php admin/cli/purge_caches.php
@@ -48,6 +49,7 @@ Example:
     exit(0);
 }
 
+echo $options['tenant']."\n";
 purge_all_caches();
 
 exit(0);

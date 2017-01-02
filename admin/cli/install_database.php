@@ -57,6 +57,7 @@ Options:
 --fullname=STRING     Name of the site
 --shortname=STRING    Name of the site
 -h, --help            Print out this help
+--tenant              Tenant domain in a multi-tenant installation
 
 Example:
 \$sudo -u www-data /usr/bin/php admin/cli/install_database.php --lang=cs --adminpass=soMePass123 --agree-license

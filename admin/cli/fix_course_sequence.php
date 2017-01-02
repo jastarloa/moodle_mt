@@ -33,7 +33,8 @@ list($options, $unrecognized) = cli_get_params(
     array(
         'courses'           => false,
         'fix'               => false,
-        'help'              => false
+        'help'              => false,
+        'tenant'            => false
     ),
     array(
         'h' => 'help',
@@ -69,6 +70,7 @@ Options:
 -f, --fix             Fix the mismatches in DB. If not specified check only and
                       report problems to STDERR
 -h, --help            Print out this help
+--tenant              Tenant domain in a multi-tenant installation
 
 Example:
 \$sudo -u www-data /usr/bin/php admin/cli/fix_course_sequence.php --courses=*

@@ -35,6 +35,7 @@ list($options, $unrecognized) = cli_get_params(array(
     'courseshortname' => '',
     'destination' => '',
     'help' => false,
+    'tenant' => false,
     ), array('h' => 'help'));
 
 if ($unrecognized) {
@@ -52,6 +53,7 @@ Options:
 --destination=STRING        Path where to store backup file. If not set the backup
                             will be stored within the course backup file area.
 -h, --help                  Print out this help.
+--tenant              Tenant domain in a multi-tenant installation
 
 Example:
 \$sudo -u www-data /usr/bin/php admin/cli/backup.php --courseid=2 --destination=/moodle/backup/\n

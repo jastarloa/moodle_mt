@@ -29,7 +29,7 @@ require(__DIR__.'/../../config.php');
 require_once($CFG->libdir.'/clilib.php');
 
 // Now get cli options.
-list($options, $unrecognized) = cli_get_params(array('help'=>false, 'ie9fix'=>false, 'noaspectratio'=>false, 'path'=>$CFG->dirroot),
+list($options, $unrecognized) = cli_get_params(array('help'=>false, 'ie9fix'=>false, 'noaspectratio'=>false, 'path'=>$CFG->dirroot, 'tenant'=>false),
     array('h'=>'help'));
 
 if ($unrecognized) {
@@ -60,6 +60,7 @@ Options:
 --ie9fix              Adds preserveAspectRatio=\"xMinYMid meet\" to every svg image
 --noaspectratio       Removes preserveAspectRatio from svg files
 --path=PATH           Path to directory or file to be converted, by default \$CFG->dirroot
+--tenant              Tenant domain in a multi-tenant installation
 
 Examples:
 \$ php svgtool.php --ie9fix

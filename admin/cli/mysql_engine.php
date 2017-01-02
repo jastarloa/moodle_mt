@@ -34,7 +34,7 @@ if ($DB->get_dbfamily() !== 'mysql') {
 }
 
 // now get cli options
-list($options, $unrecognized) = cli_get_params(array('help'=>false, 'list'=>false, 'engine'=>false, 'available'=>false),
+list($options, $unrecognized) = cli_get_params(array('help'=>false, 'list'=>false, 'engine'=>false, 'available'=>false, 'tenant' => false),
                                                array('h'=>'help', 'l'=>'list', 'a'=>'available'));
 
 if ($unrecognized) {
@@ -54,6 +54,7 @@ Options:
 -l, --list            Show table information
 -a, --available       Show list of available engines
 -h, --help            Print out this help
+--tenant              Tenant domain in a multi-tenant installation
 
 Example:
 \$sudo -u www-data /usr/bin/php admin/cli/mysql_engine.php --engine=InnoDB

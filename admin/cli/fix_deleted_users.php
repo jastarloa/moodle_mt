@@ -30,7 +30,7 @@ require_once($CFG->libdir.'/clilib.php');
 
 
 // Now get cli options.
-list($options, $unrecognized) = cli_get_params(array('help'=>false),
+list($options, $unrecognized) = cli_get_params(array('help'=>false,'tenant' => false),
     array('h'=>'help'));
 
 if ($unrecognized) {
@@ -53,6 +53,7 @@ if ($options['help']) {
 
         Options:
         -h, --help            Print out this help
+		--tenant              Tenant domain in a multi-tenant installation
 
         Example:
         \$sudo -u www-data /usr/bin/php admin/cli/fix_deleted_users.php

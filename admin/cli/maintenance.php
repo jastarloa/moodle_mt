@@ -31,7 +31,7 @@ require_once("$CFG->libdir/adminlib.php");
 
 
 // Now get cli options.
-list($options, $unrecognized) = cli_get_params(array('enable'=>false, 'enablelater'=>0, 'enableold'=>false, 'disable'=>false, 'help'=>false),
+list($options, $unrecognized) = cli_get_params(array('enable'=>false, 'enablelater'=>0, 'enableold'=>false, 'disable'=>false, 'help'=>false, 'tenant' => false),
                                                array('h'=>'help'));
 
 if ($unrecognized) {
@@ -50,6 +50,7 @@ Options:
 --enableold           Enable legacy half-maintenance mode
 --disable             Disable maintenance mode
 -h, --help            Print out this help
+--tenant              Tenant domain in a multi-tenant installation
 
 Example:
 \$ sudo -u www-data /usr/bin/php admin/cli/maintenance.php

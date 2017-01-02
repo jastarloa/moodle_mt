@@ -34,7 +34,8 @@ $longparams = array(
         'help' => false,
         'username' => '',
         'password' => '',
-        'ignore-password-policy' => false
+        'ignore-password-policy' => false,
+		'tenant' => false
 );
 
 $shortparams = array(
@@ -64,6 +65,7 @@ Options:
 -u, --username=username       Specify username to change
 -p, --password=newpassword    Specify new password
 --ignore-password-policy      Ignore password policy when setting password
+--tenant              		  Tenant domain in a multi-tenant installation
 
 Example:
 \$sudo -u www-data /usr/bin/php admin/cli/reset_password.php

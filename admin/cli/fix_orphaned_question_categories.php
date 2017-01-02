@@ -32,7 +32,7 @@ require(__DIR__.'/../../config.php');
 require_once($CFG->libdir.'/clilib.php');
 require_once($CFG->libdir.'/questionlib.php');
 
-$long = array('fix'  => false, 'help' => false);
+$long = array('fix'  => false, 'help' => false, 'tenant' => false);
 $short = array('f' => 'fix', 'h' => 'help');
 
 // Now get cli options.
@@ -58,6 +58,7 @@ if ($options['help']) {
         -h, --help            Print out this help
         -f, --fix             Fix the orphaned question categories in the DB.
                               If not specified only check and report problems to STDERR.
+		--tenant              Tenant domain in a multi-tenant installation
         Example:
         \$sudo -u www-data /usr/bin/php admin/cli/fix_orphaned_question_categories.php
         \$sudo -u www-data /usr/bin/php admin/cli/fix_orphaned_question_categories.php -f

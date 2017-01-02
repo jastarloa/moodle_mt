@@ -83,6 +83,7 @@ Options:
                       required in non-interactive mode.
 --skip-database       Stop the installation before installing the database.
 -h, --help            Print out this help
+--tenant              Tenant domain in a multi-tenant installation
 
 Example:
 \$sudo -u www-data /usr/bin/php admin/cli/install.php --lang=cs

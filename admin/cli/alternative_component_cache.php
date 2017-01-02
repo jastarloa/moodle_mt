@@ -41,7 +41,8 @@ list($options, $unrecognized) = cli_get_params(
         'file'    => false,
         'rebuild' => false,
         'print'   => false,
-        'help'    => false
+        'help'    => false,
+        'tenant' => false
     ),
     array(
         'h' => 'help'
@@ -62,6 +63,7 @@ Options:
 --rebuild             Rebuild \$CFG->alternative_component_cache file
 --file=filepath       Save component cache to file
 --print               Print component cache file content
+--tenant              Tenant domain in a multi-tenant installation
 
 Example:
 \$ php admin/cli/rebuild_alternative_component_cache.php --rebuild

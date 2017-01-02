@@ -51,7 +51,7 @@ list($options, $unrecognized) = cli_get_params(
         'non-interactive'   => false,
         'allow-unstable'    => false,
         'help'              => false,
-        'lang'              => $lang
+        'tenant'            => false,
     ),
     array(
         'h' => 'help'
@@ -85,6 +85,7 @@ Options:
                       parameter is invalid or if the language pack is not
                       installed.
 -h, --help            Print out this help
+--tenant              Tenant domain in a multi-tenant installation
 
 Example:
 \$sudo -u www-data /usr/bin/php admin/cli/upgrade.php

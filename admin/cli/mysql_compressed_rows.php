@@ -38,8 +38,8 @@ if ($engine !== 'innodb' and $engine !== 'xtradb') {
 }
 
 list($options, $unrecognized) = cli_get_params(
-    array('help' => false, 'info' => false, 'list' => false, 'fix' => false, 'showsql' => false),
-    array('h' => 'help', 'i' => 'info', 'l' => 'list', 'f' => 'fix', 's' => 'showsql')
+    array('help' => false, 'info' => false, 'list' => false, 'fix' => false, 'showsql' => false, 'tenant' => false),
+    array('h' => 'help', 'i' => 'info', 'l' => 'list', 'f' => 'fix', 's' => 'showsql', 't' => 'tenant')
 );
 
 if ($unrecognized) {
@@ -61,6 +61,7 @@ Options:
 -f, --fix             Attempt to fix all tables (requires SUPER privilege)
 -s, --showsql         Print SQL statements for fixing of tables
 -h, --help            Print out this help
+--tenant              Tenant domain in a multi-tenant installation
 
 Example:
 \$ sudo -u www-data /usr/bin/php admin/cli/mysql_compressed_rows.php -l

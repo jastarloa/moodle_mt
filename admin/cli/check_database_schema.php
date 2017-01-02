@@ -32,6 +32,7 @@ $help = "Validate database structure
 
 Options:
 -h, --help            Print out this help.
+--tenant              Tenant domain in a multi-tenant installation
 
 Example:
 \$ sudo -u www-data /usr/bin/php admin/cli/check_database_schema.php
@@ -40,6 +41,7 @@ Example:
 list($options, $unrecognized) = cli_get_params(
     array(
         'help' => false,
+        'tenant' => false,
     ),
     array(
         'h' => 'help',

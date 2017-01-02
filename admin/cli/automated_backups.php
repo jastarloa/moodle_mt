@@ -33,7 +33,7 @@ require_once($CFG->libdir.'/clilib.php');      // cli only functions
 require_once($CFG->libdir.'/cronlib.php');
 
 // now get cli options
-list($options, $unrecognized) = cli_get_params(array('help'=>false),
+list($options, $unrecognized) = cli_get_params(array('help'=>false,'tenant' => false),
                                                array('h'=>'help'));
 
 if ($unrecognized) {
@@ -50,6 +50,7 @@ called via cron.
 
 Options:
 -h, --help            Print out this help
+--tenant              Tenant domain in a multi-tenant installation
 
 Example:
 \$sudo -u www-data /usr/bin/php admin/cli/automated_backups.php
