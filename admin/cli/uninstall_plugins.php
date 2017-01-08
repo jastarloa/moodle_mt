@@ -43,7 +43,9 @@ Content sample for --filepath (eg.: /temp/plugins.csv), a file wit plugins to be
     report/myreport
     enrol/myenrol
 
-IMPORTANT: Order is important. You must delete first plugins not required by others.
+IMPORTANT1: Order is important. You must delete first plugins not required by others.
+IMPORTANT2: In a front cluster, please, don't use deletefiles param from a node. Instead this, you must do a logical
+unistalling and file deletion must be done externally, with a multi instance tool (eg: Chef, Puppet, AWS SMS...)
 */
 
 define('CLI_SCRIPT', true);

@@ -108,7 +108,8 @@ list($options, $unrecognized) = cli_get_params(
         'fullname'          => '',
         'shortname'         => '',
         'agree-license'     => false,
-        'help'              => false
+        'help'              => false,
+        'tenant'            => false
     ),
     array(
         'h' => 'help'

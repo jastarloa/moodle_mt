@@ -58,6 +58,10 @@ list($options, $unrecognized) = cli_get_params(
     )
 );
 
+echo "-----------------------------------------------"."\n";
+echo $options['tenant']."\n";
+echo "-----------------------------------------------"."\n";
+
 if ($options['lang']) {
     $SESSION->lang = $options['lang'];
 }

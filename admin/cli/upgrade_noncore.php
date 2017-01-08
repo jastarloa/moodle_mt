@@ -29,6 +29,11 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+/*
+Calling samples:
+  >sudo -u apache /usr/bin/php /var/www/html/moodle_mt/admin/cli/upgrade_noncore.php --tenant=tenant1.mydomain.com
+*/
+
 // Force OPcache reset if used, we do not want any stale caches
 // when detecting if upgrade necessary or when running upgrade.
 if (function_exists('opcache_reset') and !isset($_SERVER['REMOTE_ADDR'])) {
@@ -48,10 +53,8 @@ require_once($CFG->libdir.'/environmentlib.php');
 $lang = isset($SESSION->lang) ? $SESSION->lang : $CFG->lang;
 list($options, $unrecognized) = cli_get_params(
     array(
-        'non-interactive'   => false,
-        'allow-unstable'    => false,
         'help'              => false,
-        'tenant'            => false,
+        'tenant'              => false
     ),
     array(
         'h' => 'help'
@@ -62,11 +65,9 @@ echo "-----------------------------------------------"."\n";
 echo $options['tenant']."\n";
 echo "-----------------------------------------------"."\n";
 
-if ($options['lang']) {
+if (isset($options['lang'])) {
     $SESSION->lang = $options['lang'];
 }
-
-$interactive = empty($options['non-interactive']);
 
 if ($unrecognized) {
     $unrecognized = implode("\n  ", $unrecognized);
@@ -81,9 +82,6 @@ Please note you must execute this script with the same uid as apache!
 Site defaults may be changed via local/defaults.php.
 
 Options:
---non-interactive     No interactive questions or confirmations
---allow-unstable      Upgrade even if the version is not marked as stable yet,
-                      required in non-interactive mode.
 --lang=CODE           Set preferred language for CLI output. Defaults to the
                       site language if not set. Defaults to 'en' if the lang
                       parameter is invalid or if the language pack is not
@@ -136,54 +134,6 @@ if (!core_plugin_manager::instance()->all_plugins_ok($version, $failed)) {
     cli_error(get_string('pluginschecktodo', 'admin'));
 }
 
-// Only non core upgrades, so we comment this (/*...*/)
-/*if ($interactive) {
-    $a = new stdClass();
-    $a->oldversion = $oldversion;
-    $a->newversion = $newversion;
-    echo cli_heading(get_string('databasechecking', '', $a)) . PHP_EOL;
-}*/
-
-// Only non core upgrades, so we comment this (/*...*/)
-// make sure we are upgrading to a stable release or display a warning
-/*if (isset($maturity)) {
-    if (($maturity < MATURITY_STABLE) and !$options['allow-unstable']) {
-        $maturitylevel = get_string('maturity'.$maturity, 'admin');
-
-        if ($interactive) {
-            cli_separator();
-            cli_heading(get_string('notice'));
-            echo get_string('maturitycorewarning', 'admin', $maturitylevel) . PHP_EOL;
-            echo get_string('morehelp') . ': ' . get_docs_url('admin/versions') . PHP_EOL;
-            cli_separator();
-        } else {
-            cli_problem(get_string('maturitycorewarning', 'admin', $maturitylevel));
-            cli_error(get_string('maturityallowunstable', 'admin'));
-        }
-    }
-}
-
-if ($interactive) {
-    echo html_to_text(get_string('upgradesure', 'admin', $newversion))."\n";
-    $prompt = get_string('cliyesnoprompt', 'admin');
-    $input = cli_input($prompt, '', array(get_string('clianswerno', 'admin'), get_string('cliansweryes', 'admin')));
-    if ($input == get_string('clianswerno', 'admin')) {
-        exit(1);
-    }
-}*/
-
-// Only non core upgrades, so we comment this (/*...*/)
-/*if ($version > $CFG->version) {
-    // We purge all of MUC's caches here.
-    // Caches are disabled for upgrade by CACHE_DISABLE_ALL so we must set the first arg to true.
-    // This ensures a real config object is loaded and the stores will be purged.
-    // This is the only way we can purge custom caches such as memcache or APC.
-    // Note: all other calls to caches will still used the disabled API.
-    cache_helper::purge_all(true);
-    upgrade_core($version, true);
-}
-set_config('release', $release);
-set_config('branch', $branch);*/
 
 // unconditionally upgrade
 upgrade_noncore(true);
