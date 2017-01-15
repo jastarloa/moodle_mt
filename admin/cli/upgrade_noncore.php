@@ -16,16 +16,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * This script creates config.php file and prepares database.
- *
- * This script is not intended for beginners!
- * Potential problems:
- * - su to apache account or sudo before execution
- * - not compatible with Windows platform
+ * Like simple upgrade but only for external plugins. This script will not deploy a global installation nor upgrade.
  *
  * @package    core
  * @subpackage cli
- * @copyright  2009 Petr Skoda (http://skodak.org)
+ * @copyright  2015 Manu Peño
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

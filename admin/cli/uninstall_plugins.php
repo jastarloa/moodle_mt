@@ -98,6 +98,7 @@ if ($options['filepath'] != false && file_exists($options['filepath'])) {
             case 'block':
             case 'local':
             case 'report':
+            case 'qtype':
             case 'theme':
             case 'format':
                 uninstall_plugin($pieces[0], trim($pieces[1]));
