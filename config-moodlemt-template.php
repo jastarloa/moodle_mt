@@ -53,6 +53,7 @@ $CFG->dboptions = array(
 $CFG->wwwroot = $protoc."://$moodle_host";
 $CFG->dataroot = $moodle_data_path;
 $CFG->admin = 'admin';
+#$CFG->noreplyaddress = 'admin@[base-domain]';
 
 $CFG->directorypermissions = 0750;
 $CFG->disableupdateautodeploy = true;
