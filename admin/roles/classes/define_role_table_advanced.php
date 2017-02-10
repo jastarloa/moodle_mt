@@ -46,6 +46,17 @@ class core_role_define_role_table_advanced extends core_role_capability_table_wi
     public function __construct($context, $roleid) {
         $this->roleid = $roleid;
         parent::__construct($context, 'defineroletable', $roleid);
+        // INI - TODO quitar de la lista de permisos el de moodle/site:config
+        global $USER;
+        if (!is_siteadmin($USER->id)) {
+            foreach ($this->capabilities as $id => $obj) {
+                if ($obj->name == 'moodle/site:config') {
+                    unset($this->capabilities[$id]);
+                }
+            }
+            unset($this->permissions['moodle/site:config']);
+        }
+        // FIN - 
         $this->displaypermissions = $this->allpermissions;
         $this->strperms[$this->allpermissions[CAP_INHERIT]] = get_string('notset', 'core_role');
 

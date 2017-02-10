@@ -62,6 +62,7 @@ $capabilities = array(
         'captype' => 'write',
         'contextlevel' => CONTEXT_SYSTEM,
         'archetypes' => array(
+            'user' => CAP_PROHIBIT
         )
     ),
     'moodle/site:configview' => array(
