@@ -242,8 +242,8 @@ if ($hassiteconfig or has_any_capability($capabilities, $systemcontext)) {
             new lang_string('backupexecuteathelp'), array('h' => 0, 'm' => 0)));
     $storageoptions = array(
         0 => new lang_string('storagecourseonly', 'backup'),
-        1 => new lang_string('storageexternalonly', 'backup'),
-        2 => new lang_string('storagecourseandexternal', 'backup')
+        //1 => new lang_string('storageexternalonly', 'backup'),
+        //2 => new lang_string('storagecourseandexternal', 'backup')
     );
     $temp->add(new admin_setting_configselect('backup/backup_auto_storage', new lang_string('automatedstorage', 'backup'), new lang_string('automatedstoragehelp', 'backup'), 0, $storageoptions));
     $temp->add(new admin_setting_special_backup_auto_destination());
