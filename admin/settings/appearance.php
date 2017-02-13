@@ -16,7 +16,10 @@ if ($hassiteconfig or has_any_capability($capabilities, $systemcontext)) { // sp
         new lang_string('configthemelist', 'admin'), '', PARAM_NOTAGS);
     $setting->set_force_ltr(true);
     $temp->add($setting);
-    $setting = new admin_setting_configcheckbox('themedesignermode', new lang_string('themedesignermode', 'admin'), new lang_string('configthemedesignermode', 'admin'), 0);
+    // In Moodle-mt only admins and cli calls can set some delicate settings (eg.: themedesignermode)
+    if (is_siteadmin() || (isset($isclicall) && $isclicall)) {
+        $setting = new admin_setting_configcheckbox('themedesignermode', new lang_string('themedesignermode', 'admin'), new lang_string('configthemedesignermode', 'admin'), 0);
+    }
     $setting->set_updatedcallback('theme_reset_all_caches');
     $temp->add($setting);
     $temp->add(new admin_setting_configcheckbox('allowuserthemes', new lang_string('allowuserthemes', 'admin'), new lang_string('configallowuserthemes', 'admin'), 0));
