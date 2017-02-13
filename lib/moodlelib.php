@@ -5842,7 +5842,7 @@ function email_to_user($user, $from, $subject, $messagetext, $messagehtml = '', 
             // Better not to use $noreplyaddress in this case.
             return false;
         }
-        $mail->From = $from->email;
+        $mail->From = $noreplyaddress; // Moodle mt only sends with noreply address
         $fromdetails = new stdClass();
         $fromdetails->name = fullname($from);
         $fromdetails->url = preg_replace('#^https?://#', '', $CFG->wwwroot);
@@ -7801,7 +7801,12 @@ function check_php_version($version='5.2.4') {
  * @return bool
  */
 function moodle_needs_upgrading() {
-    global $CFG;
+    global $CFG, $isclicall;
+
+    // In Moodle-mt only super-admins and cli shell call can upgrade
+    if ((!is_siteadmin() && (!isset($isclicall) || !$isclicall))) {
+        return false;
+    }
 
     if (empty($CFG->version)) {
         return true;
