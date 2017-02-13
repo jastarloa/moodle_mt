@@ -20,16 +20,25 @@ if ($hassiteconfig) { // speedup for non-admins, add all caps used on this page
     $options = array(DAYSECS=>new lang_string('secondstotime86400'), WEEKSECS=>new lang_string('secondstotime604800'), 2620800=>new lang_string('nummonths', 'moodle', 1), 15724800=>new lang_string('nummonths', 'moodle', 6),0=>new lang_string('never'));
     $optionalsubsystems->add(new admin_setting_configselect('messagingdeletereadnotificationsdelay', new lang_string('messagingdeletereadnotificationsdelay', 'admin'), new lang_string('configmessagingdeletereadnotificationsdelay', 'admin'), 604800, $options));
 
-    $optionalsubsystems->add(new admin_setting_configcheckbox('messagingallowemailoverride', new lang_string('messagingallowemailoverride', 'admin'), new lang_string('configmessagingallowemailoverride','admin'), 0));
+    // In Moodle-mt only admins and cli calls can set some delicate settings (eg.: messagingallowemailoverride)
+    if (is_siteadmin() || (isset($isclicall) && $isclicall)) {
+        $optionalsubsystems->add(new admin_setting_configcheckbox('messagingallowemailoverride', new lang_string('messagingallowemailoverride', 'admin'), new lang_string('configmessagingallowemailoverride','admin'), 0));
+    }
 
-    $optionalsubsystems->add(new admin_setting_configcheckbox('enablestats', new lang_string('enablestats', 'admin'), new lang_string('configenablestats', 'admin'), 0));
+    // In Moodle-mt only admins and cli calls can set some delicate settings (eg.: enablestats)
+    if (is_siteadmin() || (isset($isclicall) && $isclicall)) {
+        $optionalsubsystems->add(new admin_setting_configcheckbox('enablestats', new lang_string('enablestats', 'admin'), new lang_string('configenablestats', 'admin'), 0));
+    }
 
     $optionalsubsystems->add(new admin_setting_configcheckbox('enablerssfeeds', new lang_string('enablerssfeeds', 'admin'), new lang_string('configenablerssfeeds', 'admin'), 0));
 
     $optionalsubsystems->add(new admin_setting_configcheckbox('enableblogs', new lang_string('enableblogs', 'admin'), new lang_string('configenableblogs', 'admin'), 1));
 
-    $options = array('off'=>new lang_string('off', 'mnet'), 'strict'=>new lang_string('on', 'mnet'));
-    $optionalsubsystems->add(new admin_setting_configselect('mnet_dispatcher_mode', new lang_string('net', 'mnet'), new lang_string('configmnet', 'mnet'), 'off', $options));
+    // In Moodle-mt only admins and cli calls can set some delicate settings (eg.: mnet_dispatcher_mode)
+    if (is_siteadmin() || (isset($isclicall) && $isclicall)) {
+        $options = array('off'=>new lang_string('off', 'mnet'), 'strict'=>new lang_string('on', 'mnet'));
+        $optionalsubsystems->add(new admin_setting_configselect('mnet_dispatcher_mode', new lang_string('net', 'mnet'), new lang_string('configmnet', 'mnet'), 'off', $options));
+    }
 
     // Conditional activities: completion and availability
     $optionalsubsystems->add(new admin_setting_configcheckbox('enablecompletion',
@@ -48,10 +57,16 @@ if ($hassiteconfig) { // speedup for non-admins, add all caps used on this page
             new lang_string('enableavailability_desc', 'availability'), 1));
     $checkbox->set_affects_modinfo(true);
 
-    $optionalsubsystems->add(new admin_setting_configcheckbox('enableplagiarism', new lang_string('enableplagiarism','plagiarism'), new lang_string('configenableplagiarism','plagiarism'), 0));
+    // In Moodle-mt only admins and cli calls can set some delicate settings (eg.: enableplagiarism)
+    if (is_siteadmin() || (isset($isclicall) && $isclicall)) {
+        $optionalsubsystems->add(new admin_setting_configcheckbox('enableplagiarism', new lang_string('enableplagiarism','plagiarism'), new lang_string('configenableplagiarism','plagiarism'), 0));
+    }
 
     $optionalsubsystems->add(new admin_setting_configcheckbox('enablebadges', new lang_string('enablebadges', 'badges'), new lang_string('configenablebadges', 'badges'), 1));
 
-    $optionalsubsystems->add(new admin_setting_configcheckbox('enableglobalsearch', new lang_string('enableglobalsearch', 'admin'),
-        new lang_string('enableglobalsearch_desc', 'admin'), 0, 1, 0));
+    // In Moodle-mt only admins and cli calls can set some delicate settings (eg.: enableglobalsearch)
+    if (is_siteadmin() || (isset($isclicall) && $isclicall)) {
+        $optionalsubsystems->add(new admin_setting_configcheckbox('enableglobalsearch', new lang_string('enableglobalsearch', 'admin'),
+            new lang_string('enableglobalsearch_desc', 'admin'), 0, 1, 0));
+    }
 }
