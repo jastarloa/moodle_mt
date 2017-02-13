@@ -53,6 +53,18 @@ $pageurl = new moodle_url('/admin/plugins.php', $pageparams);
 
 $pluginman = core_plugin_manager::instance();
 
+// In Moodle-mt only super-admins and cli shell call can uninstall plugins
+if (($uninstall || $delete) && (!is_siteadmin() && (!isset($isclicall) || !$isclicall))) {
+    $PAGE->set_url($pageurl);
+    $PAGE->set_context($syscontext);
+    $PAGE->set_pagelayout('admin');
+    $PAGE->set_title(get_string('uninstall', 'plugin'));
+    $PAGE->set_heading(get_string('uninstall', 'plugin'));
+    $PAGE->navbar->add(get_string('uninstalling', 'core_plugin', array('name' => $uninstall)));
+    echo $OUTPUT->header();
+    print_error('nopermissions', 'error', '', get_string('uninstall', 'plugin'));
+}
+
 if ($uninstall) {
     require_sesskey();
 
