@@ -395,9 +395,7 @@ class calc_bill extends \core\task\scheduled_task {
         $vdata = array_reverse($vdata);
 
         $rows = array();
-        $totalbytes = 0;
         foreach ($vdata as $ind => $val) {
-            $totalbytes += (float) $val;
             $temp = array();
             $temp[] = array('v' => $val->year . '/' . $val->month);
             $temp[] = array('v' => (float) $val->bill);
