@@ -15,20 +15,30 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version details.
+ * Capabilities for this local plugin.
  *
- * @package   local_mtadmintools
+ * @package    local_mtadmintools
  * @copyright  2017
- * @autor   Manu Peño
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author Manu Peño
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2017021500;        // The current plugin version (Date: YYYYMMDDXX).
-$plugin->requires  = 2016120500;        // Requires this Moodle version.
-$plugin->component = 'local_mtadmintools'; // Full name of the plugin (used for diagnostics).
-
-$plugin->dependencies = array(
-    'enrol_paypal' => ANY_VERSION,
+$capabilities = array(
+    'local/mtadmintools:manageclientsettings' => array(
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes' => array(
+            'manager' => CAP_ALLOW
+        )
+    ),
+    'local/mtadmintools:readclientsettings' => array(
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes' => array(
+            'manager' => CAP_ALLOW,
+            'coursecreator' => CAP_ALLOW
+        )
+    ),
 );

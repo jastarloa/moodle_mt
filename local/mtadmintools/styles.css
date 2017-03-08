@@ -1,0 +1,6 @@
+#page-local-mtadmintools-clientmanag .mt-chart {
+    display: inline-block;
+}
+#page-local-mtadmintools-clientmanag .mt-csv-icon, #page-local-mtadmintools-adminmanag .mt-csv-icon {
+    display: inline-block; float: left; padding-top: 45px; width: 130px; text-align: center;
+}

@@ -15,20 +15,24 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version details.
+ * Definition of local_mtadmintools tasks.
  *
- * @package   local_mtadmintools
- * @copyright  2017
- * @autor   Manu Peño
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package    local_mtadmintools
+ * @category   task
+ * @copyright  2017 Manu
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2017021500;        // The current plugin version (Date: YYYYMMDDXX).
-$plugin->requires  = 2016120500;        // Requires this Moodle version.
-$plugin->component = 'local_mtadmintools'; // Full name of the plugin (used for diagnostics).
-
-$plugin->dependencies = array(
-    'enrol_paypal' => ANY_VERSION,
+$tasks = array(
+    array(
+        'classname' => 'local_mtadmintools\task\calc_bill',
+        'blocking' => 0,
+        'minute' => '45',
+        'hour' => '7,15,19,23',
+        'day' => '*',
+        'month' => '*',
+        'dayofweek' => '*'
+    )
 );

@@ -15,20 +15,22 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version details.
+ * This file keeps track of upgrades to this plugin
  *
- * @package   local_mtadmintools
- * @copyright  2017
- * @autor   Manu Peño
+ * @package local_mtadmintools
+ * @copyright 2017
+ * @author Manu Peño
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2017021500;        // The current plugin version (Date: YYYYMMDDXX).
-$plugin->requires  = 2016120500;        // Requires this Moodle version.
-$plugin->component = 'local_mtadmintools'; // Full name of the plugin (used for diagnostics).
+/**
+ *
+ * @param int $oldversion
+ */
+function xmldb_local_mtadmintools_upgrade($oldversion) {
+    global $CFG;
 
-$plugin->dependencies = array(
-    'enrol_paypal' => ANY_VERSION,
-);
+    return true;
+}

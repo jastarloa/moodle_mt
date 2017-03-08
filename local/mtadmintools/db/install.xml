@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/mtadmintools/db" VERSION="20170619" COMMENT="XMLDB file for Moodle local/mtadmintools"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="local_mtadmintools_bill_hist" COMMENT="Default comment for local_mtadmintools, please edit me">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="year" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Year of invoice"/>
+        <FIELD NAME="month" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Month of invoice"/>
+        <FIELD NAME="activeusers" TYPE="int" LENGTH="20" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="diskgb" TYPE="int" LENGTH="20" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="currency" TYPE="char" LENGTH="5" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="pricebyuser" TYPE="number" LENGTH="10" NOTNULL="true" SEQUENCE="false" DECIMALS="2"/>
+        <FIELD NAME="pricebygb" TYPE="number" LENGTH="10" NOTNULL="true" SEQUENCE="false" DECIMALS="2"/>
+        <FIELD NAME="bill" TYPE="number" LENGTH="20" NOTNULL="true" DEFAULT="0" SEQUENCE="false" DECIMALS="2" COMMENT="bill"/>
+        <FIELD NAME="sendedbillnotif" TYPE="binary" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="sendedthresholdnotif" TYPE="binary" NOTNULL="false" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="billperiod" TYPE="unique" FIELDS="year, month"/>
+      </KEYS>
+    </TABLE>
+  </TABLES>
+</XMLDB>
