@@ -678,7 +678,9 @@ abstract class format_base {
             if (isset($option['type'])) {
                 $mform->setType($optionname, $option['type']);
             }
-            if (is_null($mform->getElementValue($optionname)) && isset($option['default'])) {
+            if (isset($option['default']) && !array_key_exists($optionname, $mform->_defaultValues)) {
+                // Set defaults for the elements in the form.
+                // Since we call this method after set_data() make sure that we don't override what was already set.
                 $mform->setDefault($optionname, $option['default']);
             }
         }
@@ -1137,6 +1139,26 @@ abstract class format_base {
         }
 
         return $startdate + $courseduration;
+    }
+
+    /**
+     * Indicates whether the course format supports the creation of the Announcements forum.
+     *
+     * For course format plugin developers, please override this to return true if you want the Announcements forum
+     * to be created upon course creation.
+     *
+     * @return bool
+     */
+    public function supports_news() {
+        // For backwards compatibility, check if default blocks include the news_items block.
+        $defaultblocks = $this->get_default_blocks();
+        foreach ($defaultblocks as $blocks) {
+            if (in_array('news_items', $blocks)) {
+                return true;
+            }
+        }
+        // Return false by default.
+        return false;
     }
 
     /**

@@ -24,31 +24,12 @@
 
 require_once($CFG->libdir.'/eventslib.php');
 
-define ('MESSAGE_SHORTLENGTH', 300);
+define('MESSAGE_SHORTLENGTH', 300);
 
-define ('MESSAGE_DISCUSSION_WIDTH',600);
-define ('MESSAGE_DISCUSSION_HEIGHT',500);
-
-define ('MESSAGE_SHORTVIEW_LIMIT', 8);//the maximum number of messages to show on the short message history
-
-define('MESSAGE_HISTORY_SHORT',0);
-define('MESSAGE_HISTORY_ALL',1);
-
-define('MESSAGE_VIEW_UNREAD_MESSAGES','unread');
-define('MESSAGE_VIEW_RECENT_CONVERSATIONS','recentconversations');
-define('MESSAGE_VIEW_RECENT_NOTIFICATIONS','recentnotifications');
-define('MESSAGE_VIEW_CONTACTS','contacts');
-define('MESSAGE_VIEW_BLOCKED','blockedusers');
-define('MESSAGE_VIEW_COURSE','course_');
-define('MESSAGE_VIEW_SEARCH','search');
+define('MESSAGE_HISTORY_ALL', 1);
 
 define('MESSAGE_SEARCH_MAX_RESULTS', 200);
 
-define('MESSAGE_CONTACTS_PER_PAGE',10);
-define('MESSAGE_MAX_COURSE_NAME_LENGTH', 30);
-
-define('MESSAGE_UNREAD', 'unread');
-define('MESSAGE_READ', 'read');
 define('MESSAGE_TYPE_NOTIFICATION', 'notification');
 define('MESSAGE_TYPE_MESSAGE', 'message');
 
@@ -75,6 +56,13 @@ define('MESSAGE_PERMITTED_MASK', 0x0c); // 1100
  * Set default value for default outputs permitted setting
  */
 define('MESSAGE_DEFAULT_PERMITTED', 'permitted');
+
+/**
+ * Set default values for polling.
+ */
+define('MESSAGE_DEFAULT_MIN_POLL_IN_SECONDS', 10);
+define('MESSAGE_DEFAULT_MAX_POLL_IN_SECONDS', 2 * MINSECS);
+define('MESSAGE_DEFAULT_TIMEOUT_POLL_IN_SECONDS', 5 * MINSECS);
 
 /**
  * Retrieve users blocked by $user1
@@ -232,10 +220,12 @@ function message_count_unread_messages($user1=null, $user2=null) {
     }
 
     if (!empty($user2)) {
-        return $DB->count_records_select('message', "useridto = ? AND useridfrom = ?",
+        return $DB->count_records_select('message', "useridto = ? AND useridfrom = ? AND notification = 0
+            AND timeusertodeleted = 0",
             array($user1->id, $user2->id), "COUNT('id')");
     } else {
-        return $DB->count_records_select('message', "useridto = ?",
+        return $DB->count_records_select('message', "useridto = ? AND notification = 0
+            AND timeusertodeleted = 0",
             array($user1->id), "COUNT('id')");
     }
 }
@@ -960,28 +950,7 @@ function get_message_processors($ready = false, $reset = false, $resetonly = fal
         // Get all processors, ensure the name column is the first so it will be the array key
         $processors = $DB->get_records('message_processors', null, 'name DESC', 'name, id, enabled');
         foreach ($processors as &$processor){
-            $processorfile = $CFG->dirroot. '/message/output/'.$processor->name.'/message_output_'.$processor->name.'.php';
-            if (is_readable($processorfile)) {
-                include_once($processorfile);
-                $processclass = 'message_output_' . $processor->name;
-                if (class_exists($processclass)) {
-                    $pclass = new $processclass();
-                    $processor->object = $pclass;
-                    $processor->configured = 0;
-                    if ($pclass->is_system_configured()) {
-                        $processor->configured = 1;
-                    }
-                    $processor->hassettings = 0;
-                    if (is_readable($CFG->dirroot.'/message/output/'.$processor->name.'/settings.php')) {
-                        $processor->hassettings = 1;
-                    }
-                    $processor->available = 1;
-                } else {
-                    print_error('errorcallingprocessor', 'message');
-                }
-            } else {
-                $processor->available = 0;
-            }
+            $processor = \core_message\api::get_processed_processor_object($processor);
         }
     }
     if ($ready) {
@@ -1202,4 +1171,70 @@ function message_output_fragment_processor_settings($args = []) {
     $renderer = $PAGE->get_renderer('core', 'message');
 
     return $renderer->render_from_template('core_message/preferences_processor', $processoroutput->export_for_template($renderer));
+}
+
+/**
+ * Checks if current user is allowed to edit messaging preferences of another user
+ *
+ * @param stdClass $user user whose preferences we are updating
+ * @return bool
+ */
+function core_message_can_edit_message_profile($user) {
+    global $USER;
+    if ($user->id == $USER->id) {
+        return has_capability('moodle/user:editownmessageprofile', context_system::instance());
+    } else {
+        $personalcontext = context_user::instance($user->id);
+        if (!has_capability('moodle/user:editmessageprofile', $personalcontext)) {
+            return false;
+        }
+        if (isguestuser($user)) {
+            return false;
+        }
+        // No editing of admins by non-admins.
+        if (is_siteadmin($user) and !is_siteadmin($USER)) {
+            return false;
+        }
+        return true;
+    }
+}
+
+/**
+ * Implements callback user_preferences, whitelists preferences that users are allowed to update directly
+ *
+ * Used in {@see core_user::fill_preferences_cache()}, see also {@see useredit_update_user_preference()}
+ *
+ * @return array
+ */
+function core_message_user_preferences() {
+
+    $preferences = [];
+    $preferences['message_blocknoncontacts'] = array('type' => PARAM_INT, 'null' => NULL_NOT_ALLOWED, 'default' => 0,
+        'choices' => array(0, 1));
+    $preferences['/^message_provider_([\w\d_]*)_logged(in|off)$/'] = array('isregex' => true, 'type' => PARAM_NOTAGS,
+        'null' => NULL_NOT_ALLOWED, 'default' => 'none',
+        'permissioncallback' => function ($user, $preferencename) {
+            global $CFG;
+            require_once($CFG->libdir.'/messagelib.php');
+            if (core_message_can_edit_message_profile($user) &&
+                    preg_match('/^message_provider_([\w\d_]*)_logged(in|off)$/', $preferencename, $matches)) {
+                $providers = message_get_providers_for_user($user->id);
+                foreach ($providers as $provider) {
+                    if ($matches[1] === $provider->component . '_' . $provider->name) {
+                       return true;
+                    }
+                }
+            }
+            return false;
+        },
+        'cleancallback' => function ($value, $preferencename) {
+            if ($value === 'none' || empty($value)) {
+                return 'none';
+            }
+            $parts = explode('/,/', $value);
+            $processors = array_keys(get_message_processors());
+            array_filter($parts, function($v) use ($processors) {return in_array($v, $processors);});
+            return $parts ? join(',', $parts) : 'none';
+        });
+    return $preferences;
 }

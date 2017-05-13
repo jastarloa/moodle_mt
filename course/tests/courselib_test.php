@@ -2019,7 +2019,7 @@ class core_course_courselib_testcase extends advanced_testcase {
 
         // Create the course with sections.
         $course = $this->getDataGenerator()->create_course(array('numsections' => 10), array('createsections' => true));
-        $sections = $DB->get_records('course_sections', array('course' => $course->id));
+        $sections = $DB->get_records('course_sections', array('course' => $course->id), 'section');
         $coursecontext = context_course::instance($course->id);
         $section = array_pop($sections);
         course_delete_section($course, $section);
@@ -2935,11 +2935,19 @@ class core_course_courselib_testcase extends advanced_testcase {
         $this->assertTrue($navoptions->tags);
         $this->assertFalse($navoptions->search);
         $this->assertTrue($navoptions->calendar);
+        $this->assertTrue($navoptions->competencies);
 
         // Enable global search now.
         $CFG->enableglobalsearch = 1;
         $navoptions = course_get_user_navigation_options($context, $course);
         $this->assertTrue($navoptions->search);
+
+        // Disable competencies.
+        $oldcompetencies = get_config('core_competency', 'enabled');
+        set_config('enabled', false, 'core_competency');
+        $navoptions = course_get_user_navigation_options($context, $course);
+        $this->assertFalse($navoptions->competencies);
+        set_config('enabled', $oldcompetencies, 'core_competency');
 
         // Now try with a standard user.
         $user = $this->getDataGenerator()->create_user();
@@ -3205,14 +3213,24 @@ class core_course_courselib_testcase extends advanced_testcase {
      * @param int $resultingenddate
      */
     public function test_course_dates_reset($startdate, $enddate, $resetstartdate, $resetenddate, $resultingstartdate, $resultingenddate) {
-        global $DB;
+        global $CFG, $DB;
+
+        require_once($CFG->dirroot.'/completion/criteria/completion_criteria_date.php');
 
         $this->resetAfterTest(true);
 
+        $CFG->enablecompletion = true;
+
         $this->setTimezone('UTC');
 
-        $record = array('startdate' => $startdate, 'enddate' => $enddate);
+        $record = array('startdate' => $startdate, 'enddate' => $enddate, 'enablecompletion' => 1);
         $originalcourse = $this->getDataGenerator()->create_course($record);
+        $coursecriteria = new completion_criteria_date(array('course' => $originalcourse->id, 'timeend' => $startdate + DAYSECS));
+        $coursecriteria->insert();
+
+        $activitycompletiondate = $startdate + DAYSECS;
+        $data = $this->getDataGenerator()->create_module('data', array('course' => $originalcourse->id),
+                        array('completion' => 1, 'completionexpected' => $activitycompletiondate));
 
         $resetdata = new stdClass();
         $resetdata->id = $originalcourse->id;
@@ -3226,6 +3244,12 @@ class core_course_courselib_testcase extends advanced_testcase {
 
         $this->assertEquals($resultingstartdate, $course->startdate);
         $this->assertEquals($resultingenddate, $course->enddate);
+
+        $coursecompletioncriteria = completion_criteria_date::fetch(array('course' => $originalcourse->id));
+        $this->assertEquals($resultingstartdate + DAYSECS, $coursecompletioncriteria->timeend);
+
+        $this->assertEquals($resultingstartdate + DAYSECS, $DB->get_field('course_modules', 'completionexpected',
+            array('id' => $data->cmid)));
     }
 
     /**

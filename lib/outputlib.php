@@ -86,7 +86,8 @@ function theme_get_revision() {
 
     if (empty($CFG->themedesignermode)) {
         if (empty($CFG->themerev)) {
-            return -1;
+            // This only happens during install. It doesn't matter what themerev we use as long as it's positive.
+            return 1;
         } else {
             return $CFG->themerev;
         }
@@ -150,6 +151,9 @@ class theme_config {
      * @var string Default theme, used when requested theme not found.
      */
     const DEFAULT_THEME = 'boost';
+
+    /** The key under which the SCSS file is stored amongst the CSS files. */
+    const SCSS_KEY = '__SCSS__';
 
     /**
      * @var array You can base your theme on other themes by linking to the other theme as
@@ -293,7 +297,7 @@ class theme_config {
      * object as second parameter. A return value is not required, the tree can
      * be edited in place.
      */
-    public $csstreepostprocess = null;
+    public $csstreepostprocessor = null;
 
     /**
      * @var string Accessibility: Right arrow-like character is
@@ -345,10 +349,10 @@ class theme_config {
     public $doctype = 'html5';
 
     /**
-     * @var string undeletableblocktypes If set to a string, will list the block types that cannot be deleted. Defaults to
+     * @var string requiredblocks If set to a string, will list the block types that cannot be deleted. Defaults to
      *                                   navigation and settings.
      */
-    public $undeletableblocktypes = false;
+    public $requiredblocks = false;
 
     //==Following properties are not configurable from theme config.php==
 
@@ -426,10 +430,18 @@ class theme_config {
     public $lessfile = false;
 
     /**
-     * The SCSS file to compile. This takes precedence over the LESS file.
-     * @var string
+     * The SCSS file to compile (without .scss), located in the scss/ folder of the theme.
+     * Or a Closure, which receives the theme_config as argument and must
+     * return the SCSS content. This setting takes precedence over self::$lessfile.
+     * @var string|Closure
      */
-    public $scssfile = false;
+    public $scss = false;
+
+    /**
+     * Local cache of the SCSS property.
+     * @var false|array
+     */
+    protected $scsscache = null;
 
     /**
      * The name of the function to call to get the LESS code to inject.
@@ -487,10 +499,15 @@ class theme_config {
             throw new coding_exception('Default theme '.theme_config::DEFAULT_THEME.' not available or broken!');
 
         } else if ($config = theme_config::find_theme_config($CFG->theme, $settings)) {
+            debugging('This page should be using theme ' . $themename .
+                    ' which cannot be initialised. Falling back to the site theme ' . $CFG->theme, DEBUG_NORMAL);
             return new theme_config($config);
 
         } else {
             // bad luck, the requested theme has some problems - admin see details in theme config
+            debugging('This page should be using theme ' . $themename .
+                    ' which cannot be initialised. Nor can the site theme ' . $CFG->theme .
+                    '. Falling back to ' . theme_config::DEFAULT_THEME, DEBUG_NORMAL);
             return new theme_config(theme_config::find_theme_config(theme_config::DEFAULT_THEME, $settings));
         }
     }
@@ -530,11 +547,11 @@ class theme_config {
         $configurable = array(
             'parents', 'sheets', 'parents_exclude_sheets', 'plugins_exclude_sheets',
             'javascripts', 'javascripts_footer', 'parents_exclude_javascripts',
-            'layouts', 'enable_dock', 'enablecourseajax', 'undeletableblocktypes',
+            'layouts', 'enable_dock', 'enablecourseajax', 'requiredblocks',
             'rendererfactory', 'csspostprocess', 'editor_sheets', 'rarrow', 'larrow', 'uarrow', 'darrow',
             'hidefromselector', 'doctype', 'yuicssmodules', 'blockrtlmanipulations',
             'lessfile', 'extralesscallback', 'lessvariablescallback', 'blockrendermethod',
-            'scssfile', 'extrascsscallback', 'prescsscallback', 'csstreepostprocessor');
+            'scss', 'extrascsscallback', 'prescsscallback', 'csstreepostprocessor', 'addblockposition');
 
         foreach ($config as $key=>$value) {
             if (in_array($key, $configurable)) {
@@ -814,7 +831,7 @@ class theme_config {
                     // We need to serve parents individually otherwise we may easily exceed the style limit IE imposes (4096).
                     $urls[] = new moodle_url($baseurl, array('theme'=>$this->name,'type'=>'ie', 'subtype'=>'parents', 'sheet'=>$parent));
                 }
-                if (!empty($this->scssfile)) {
+                if ($this->get_scss_property()) {
                     // No need to define the type as IE here.
                     $urls[] = new moodle_url($baseurl, array('theme' => $this->name, 'type' => 'scss'));
                 } else if (!empty($this->lessfile)) {
@@ -833,7 +850,7 @@ class theme_config {
                     }
                 }
                 foreach ($css['theme'] as $sheet => $filename) {
-                    if ($sheet === $this->scssfile) {
+                    if ($sheet === self::SCSS_KEY) {
                         // This is the theme SCSS file.
                         $urls[] = new moodle_url($baseurl, array('theme' => $this->name, 'type' => 'scss'));
                     } else if ($sheet === $this->lessfile) {
@@ -867,7 +884,7 @@ class theme_config {
                         $csscontent .= file_get_contents($v) . "\n";
                     }
                 } else {
-                    if ($type === 'theme' && $identifier === $this->scssfile) {
+                    if ($type === 'theme' && $identifier === self::SCSS_KEY) {
                         // We need the content from SCSS because this is the SCSS file from the theme.
                         $csscontent .= $this->get_css_content_from_scss(false);
                     } else if ($type === 'theme' && $identifier === $this->lessfile) {
@@ -934,7 +951,7 @@ class theme_config {
             } else if ($subtype === 'theme') {
                 $cssfiles = $css['theme'];
                 foreach ($cssfiles as $key => $value) {
-                    if (in_array($key, [$this->lessfile, $this->scssfile])) {
+                    if (in_array($key, [$this->lessfile, self::SCSS_KEY])) {
                         // Remove the LESS/SCSS file from the theme CSS files.
                         // The LESS/SCSS files use the type 'less' or 'scss', not 'ie'.
                         unset($cssfiles[$key]);
@@ -1074,15 +1091,13 @@ class theme_config {
             }
         }
 
+
         // Current theme sheets and less file.
         // We first add the SCSS, or LESS file because we want the CSS ones to
-        // be included after the SCSS/LESS code. However, if both the SCSS/LESS file
+        // be included after the SCSS/LESS code. However, if both the LESS file
         // and a CSS file share the same name, the CSS file is ignored.
-        if (!empty($this->scssfile)) {
-            $sheetfile = "{$this->dir}/scss/{$this->scssfile}.scss";
-            if (is_readable($sheetfile)) {
-                $cssfiles['theme'][$this->scssfile] = $sheetfile;
-            }
+        if ($this->get_scss_property()) {
+            $cssfiles['theme'][self::SCSS_KEY] = true;
         } else if (!empty($this->lessfile)) {
             $sheetfile = "{$this->dir}/less/{$this->lessfile}.less";
             if (is_readable($sheetfile)) {
@@ -1120,8 +1135,9 @@ class theme_config {
             throw new coding_exception('The theme did not define a LESS file, or it is not readable.');
         }
 
-        // We might need more memory to do this, so let's play safe.
+        // We might need more memory/time to do this, so let's play safe.
         raise_memory_limit(MEMORY_EXTRA);
+        core_php_time_limit::raise(300);
 
         // Files list.
         $files = $this->get_css_files($themedesigner);
@@ -1180,24 +1196,24 @@ class theme_config {
     protected function get_css_content_from_scss($themedesigner) {
         global $CFG;
 
-        $scssfile = $this->scssfile;
-        if (!$scssfile || !is_readable($this->dir . '/scss/' . $scssfile . '.scss')) {
+        list($paths, $scss) = $this->get_scss_property();
+        if (!$scss) {
             throw new coding_exception('The theme did not define a SCSS file, or it is not readable.');
         }
 
-        // We might need more memory to do this, so let's play safe.
+        // We might need more memory/time to do this, so let's play safe.
         raise_memory_limit(MEMORY_EXTRA);
-
-        // Files list.
-        $files = $this->get_css_files($themedesigner);
-
-        // Get the SCSS file path.
-        $themescssfile = $files['theme'][$scssfile];
+        core_php_time_limit::raise(300);
 
         // Set-up the compiler.
         $compiler = new core_scss();
         $compiler->prepend_raw_scss($this->get_pre_scss_code());
-        $compiler->set_file($themescssfile);
+        if (is_string($scss)) {
+            $compiler->set_file($scss);
+        } else {
+            $compiler->append_raw_scss($scss($this));
+            $compiler->setImportPaths($paths);
+        }
         $compiler->append_raw_scss($this->get_extra_scss_code());
 
         try {
@@ -1206,7 +1222,7 @@ class theme_config {
 
         } catch (\Leafo\ScssPhp\Exception $e) {
             $compiled = false;
-            debugging('Error while compiling SCSS ' . $scssfile . ' file: ' . $e->getMessage(), DEBUG_DEVELOPER);
+            debugging('Error while compiling SCSS: ' . $e->getMessage(), DEBUG_DEVELOPER);
         }
 
         // Try to save memory.
@@ -1341,6 +1357,47 @@ class theme_config {
         }
 
         return $content;
+    }
+
+    /**
+     * Get the SCSS property.
+     *
+     * This resolves whether a SCSS file (or content) has to be used when generating
+     * the stylesheet for the theme. It will look at parents themes and check the
+     * SCSS properties there.
+     *
+     * @return False when SCSS is not used.
+     *         An array with the import paths, and the path to the SCSS file or Closure as second.
+     */
+    public function get_scss_property() {
+        if ($this->scsscache === null) {
+            $configs = [$this] + $this->parent_configs;
+            $scss = null;
+
+            foreach ($configs as $config) {
+                $path = "{$config->dir}/scss";
+
+                // We collect the SCSS property until we've found one.
+                if (empty($scss) && !empty($config->scss)) {
+                    $candidate = is_string($config->scss) ? "{$path}/{$config->scss}.scss" : $config->scss;
+                    if ($candidate instanceof Closure) {
+                        $scss = $candidate;
+                    } else if (is_string($candidate) && is_readable($candidate)) {
+                        $scss = $candidate;
+                    }
+                }
+
+                // We collect the import paths once we've found a SCSS property.
+                if ($scss && is_dir($path)) {
+                    $paths[] = $path;
+                }
+
+            }
+
+            $this->scsscache = $scss !== null ? [$paths, $scss] : false;
+        }
+
+        return $this->scsscache;
     }
 
     /**
@@ -1512,10 +1569,22 @@ class theme_config {
             }
         }
 
+        // Now resolve all theme settings or do any other postprocessing.
+        // This needs to be done before calling core parser, since the parser strips [[settings]] tags.
+        $csspostprocess = $this->csspostprocess;
+        if (function_exists($csspostprocess)) {
+            $css = $csspostprocess($css, $this);
+        }
+
         // Post processing using an object representation of CSS.
-        $hastreeprocessor = !empty($this->csstreepostprocessor) && function_exists($this->csstreepostprocessor);
-        $needsparsing = $hastreeprocessor || !empty($this->rtlmode);
+        $treeprocessor = $this->get_css_tree_post_processor();
+        $needsparsing = !empty($treeprocessor) || !empty($this->rtlmode);
         if ($needsparsing) {
+
+            // We might need more memory/time to do this, so let's play safe.
+            raise_memory_limit(MEMORY_EXTRA);
+            core_php_time_limit::raise(300);
+
             $parser = new core_cssparser($css);
             $csstree = $parser->parse();
             unset($parser);
@@ -1524,19 +1593,12 @@ class theme_config {
                 $this->rtlize($csstree);
             }
 
-            if ($hastreeprocessor) {
-                $fn = $this->csstreepostprocessor;
-                $fn($csstree, $this);
+            if ($treeprocessor) {
+                $treeprocessor($csstree, $this);
             }
 
             $css = $csstree->render();
             unset($csstree);
-        }
-
-        // now resolve all theme settings or do any other postprocessing
-        $csspostprocess = $this->csspostprocess;
-        if (function_exists($csspostprocess)) {
-            $css = $csspostprocess($css, $this);
         }
 
         return $css;
@@ -1721,7 +1783,8 @@ class theme_config {
      *
      * @param string $image name of image, may contain relative path
      * @param string $component
-     * @param bool $svg If set to true SVG images will also be looked for.
+     * @param bool $svg|null Should SVG images also be looked for? If null, resorts to $CFG->svgicons if that is set; falls back to
+     * auto-detection of browser support otherwise
      * @return string full file path
      */
     public function resolve_image_location($image, $component, $svg = false) {
@@ -2172,6 +2235,21 @@ class theme_config {
         }
         // Default it to blocks.
         return 'blocks';
+    }
+
+    /**
+     * Get the callable for CSS tree post processing.
+     *
+     * @return string|null
+     */
+    public function get_css_tree_post_processor() {
+        $configs = [$this] + $this->parent_configs;
+        foreach ($configs as $config) {
+            if (!empty($config->csstreepostprocessor) && is_callable($config->csstreepostprocessor)) {
+                return $config->csstreepostprocessor;
+            }
+        }
+        return null;
     }
 }
 

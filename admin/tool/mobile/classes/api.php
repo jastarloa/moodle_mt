@@ -31,7 +31,7 @@ use moodle_url;
 use moodle_exception;
 
 /**
- * API exposed by tool_mobile
+ * API exposed by tool_mobile, to be used mostly by external functions.
  *
  * @copyright  2016 Juan Leyva
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -57,6 +57,13 @@ class api {
         global $CFG;
         require_once($CFG->libdir . '/adminlib.php');
 
+        // Check if we can return this from cache.
+        $cache = \cache::make('tool_mobile', 'plugininfo');
+        $pluginsinfo = $cache->get('mobileplugins');
+        if ($pluginsinfo !== false) {
+            return (array)$pluginsinfo;
+        }
+
         $pluginsinfo = [];
         $plugintypes = core_component::get_plugin_types();
 
@@ -68,7 +75,7 @@ class api {
                 $component = $plugintype . '_' . $plugin;
                 $version = get_component_version($component);
 
-                require_once("$path/db/mobile.php");
+                require("$path/db/mobile.php");
                 foreach ($addons as $addonname => $addoninfo) {
                     $plugininfo = array(
                         'component' => $component,
@@ -81,7 +88,7 @@ class api {
                     );
 
                     // All the mobile packages must be under the plugin mobile directory.
-                    $package = $path . DIRECTORY_SEPARATOR . 'mobile' . DIRECTORY_SEPARATOR . $addonname . '.zip';
+                    $package = $path . '/mobile/' . $addonname . '.zip';
                     if (file_exists($package)) {
                         $plugininfo['fileurl'] = $CFG->wwwroot . '' . str_replace($CFG->dirroot, '', $package);
                         $plugininfo['filehash'] = sha1_file($package);
@@ -91,6 +98,9 @@ class api {
                 }
             }
         }
+
+        $cache->set('mobileplugins', $pluginsinfo);
+
         return $pluginsinfo;
     }
 
@@ -101,11 +111,14 @@ class api {
      */
     public static function get_public_config() {
         global $CFG, $SITE, $PAGE, $OUTPUT;
+        require_once($CFG->libdir . '/authlib.php');
 
         $context = context_system::instance();
         // We need this to make work the format text functions.
         $PAGE->set_context($context);
 
+        list($authinstructions, $notusedformat) = external_format_text($CFG->auth_instructions, FORMAT_MOODLE, $context->id);
+        list($maintenancemessage, $notusedformat) = external_format_text($CFG->maintenance_message, FORMAT_MOODLE, $context->id);
         $settings = array(
             'wwwroot' => $CFG->wwwroot,
             'httpswwwroot' => $CFG->httpswwwroot,
@@ -115,12 +128,12 @@ class api {
             'authloginviaemail' => $CFG->authloginviaemail,
             'registerauth' => $CFG->registerauth,
             'forgottenpasswordurl' => $CFG->forgottenpasswordurl,
-            'authinstructions' => format_text($CFG->auth_instructions),
+            'authinstructions' => $authinstructions,
             'authnoneenabled' => (int) is_enabled_auth('none'),
             'enablewebservices' => $CFG->enablewebservices,
             'enablemobilewebservice' => $CFG->enablemobilewebservice,
             'maintenanceenabled' => $CFG->maintenance_enabled,
-            'maintenancemessage' => format_text($CFG->maintenance_message),
+            'maintenancemessage' => $maintenancemessage,
         );
 
         $typeoflogin = get_config('tool_mobile', 'typeoflogin');
@@ -130,8 +143,12 @@ class api {
         }
         $settings['typeoflogin'] = $typeoflogin;
 
+        // Check if the user can sign-up to return the launch URL in that case.
+        $cansignup = signup_is_enabled();
+
         if ($typeoflogin == self::LOGIN_VIA_BROWSER or
-                $typeoflogin == self::LOGIN_VIA_EMBEDDED_BROWSER) {
+                $typeoflogin == self::LOGIN_VIA_EMBEDDED_BROWSER or
+                $cansignup) {
             $url = new moodle_url("/$CFG->admin/tool/mobile/launch.php");
             $settings['launchurl'] = $url->out(false);
         }
@@ -162,9 +179,15 @@ class api {
         if (empty($section) or $section == 'frontpagesettings') {
             require_once($CFG->dirroot . '/course/format/lib.php');
             // First settings that anyone can deduce.
-            $settings->fullname = $SITE->fullname;
-            $settings->shortname = $SITE->shortname;
-            $settings->summary = $SITE->summary;
+            $settings->fullname = external_format_string($SITE->fullname, $context->id);
+            $settings->shortname = external_format_string($SITE->shortname, $context->id);
+
+            // Return to a var instead of directly to $settings object because of differences between
+            // list() in php5 and php7. {@link http://php.net/manual/en/function.list.php}
+            $formattedsummary = external_format_text($SITE->summary, $SITE->summaryformat,
+                                                                                        $context->id);
+            $settings->summary = $formattedsummary[0];
+            $settings->summaryformat = $formattedsummary[1];
             $settings->frontpage = $CFG->frontpage;
             $settings->frontpageloggedin = $CFG->frontpageloggedin;
             $settings->maxcategorydepth = $CFG->maxcategorydepth;

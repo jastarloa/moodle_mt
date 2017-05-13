@@ -648,52 +648,57 @@ class single_button implements renderable {
     /**
      * @var moodle_url Target url
      */
-    var $url;
+    public $url;
 
     /**
      * @var string Button label
      */
-    var $label;
+    public $label;
 
     /**
      * @var string Form submit method post or get
      */
-    var $method = 'post';
+    public $method = 'post';
 
     /**
      * @var string Wrapping div class
      */
-    var $class = 'singlebutton';
+    public $class = 'singlebutton';
+
+    /**
+     * @var bool True if button is primary button. Used for styling.
+     */
+    public $primary = false;
 
     /**
      * @var bool True if button disabled, false if normal
      */
-    var $disabled = false;
+    public $disabled = false;
 
     /**
      * @var string Button tooltip
      */
-    var $tooltip = null;
+    public $tooltip = null;
 
     /**
      * @var string Form id
      */
-    var $formid;
+    public $formid;
 
     /**
      * @var array List of attached actions
      */
-    var $actions = array();
+    public $actions = array();
 
     /**
      * @var array $params URL Params
      */
-    var $params;
+    public $params;
 
     /**
      * @var string Action id
      */
-    var $actionid;
+    public $actionid;
 
     /**
      * Constructor
@@ -701,10 +706,11 @@ class single_button implements renderable {
      * @param string $label button text
      * @param string $method get or post submit method
      */
-    public function __construct(moodle_url $url, $label, $method='post') {
+    public function __construct(moodle_url $url, $label, $method='post', $primary=false) {
         $this->url    = clone($url);
         $this->label  = $label;
         $this->method = $method;
+        $this->primary = $primary;
     }
 
     /**
@@ -743,6 +749,7 @@ class single_button implements renderable {
         $data->classes = $this->class;
         $data->disabled = $this->disabled;
         $data->tooltip = $this->tooltip;
+        $data->primary = $this->primary;
 
         // Form parameters.
         $params = $this->url->params();
@@ -1673,7 +1680,7 @@ class html_writer {
             $class = str_replace(']', '', $class);
             $attributes['class'] = $class;
         }
-        $attributes['class'] = 'select ' . $attributes['class']; // Add 'select' selector always
+        $attributes['class'] = 'select custom-select ' . $attributes['class']; // Add 'select' selector always.
 
         $attributes['name'] = $name;
 

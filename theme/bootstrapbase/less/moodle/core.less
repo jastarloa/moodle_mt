@@ -192,7 +192,7 @@ a.autolink.glossary:hover {
 }
 /*rtl:raw:
 .collapsible-actions .collapseexpand {
-    background: url([[pix:t/collapsed_rtl]]);
+    background: url([[pix:t/collapsed_rtl]]) right center no-repeat;
 }
 */
 .collapsible-actions .collapse-all {
@@ -224,6 +224,9 @@ a.autolink.glossary:hover {
 .pagingbar .title,
 .pagingbar .thispage {
     font-weight: bold;
+}
+img.userpicture {
+    margin-right: 5px;
 }
 img.resize {
     height: 1em;
@@ -559,7 +562,6 @@ a.skip:active {
 }
 .notepost .userpicture {
     float: left;
-    margin-right: 5px;
 }
 .notepost .content,
 .notepost .footer {
@@ -1057,7 +1059,12 @@ tr.flagged-tag a {
 .userenrolment .col_group .groups {
     margin-right: 30px;
 }
-.userenrolment .col_role .role,
+.userenrolment .col_role .role {
+    float: left;
+    padding: 0 3px 3px;
+    margin: 0 3px 3px;
+    white-space: nowrap;
+}
 .userenrolment .col_group .group {
     float: left;
     padding: 3px;
@@ -1089,8 +1096,8 @@ tr.flagged-tag a {
 
 .userenrolment .col_enrol .enrolment {
     float: left;
-    padding: 3px;
-    margin: 3px;
+    padding: 0 3px 3px;
+    margin: 0 3px 3px;
 }
 .userenrolment .col_enrol .enrolment a {
     float: right;
@@ -1761,36 +1768,34 @@ table.collection {
     .table-bordered;
     .table-striped;
 }
-table.collection .name {
+table.collection td.name {
     text-align: left;
     vertical-align: middle;
 }
-table.collection .awards {
-    width: 10%;
-    text-align: center;
-    vertical-align: middle;
-}
-table.collection .criteria {
-    width: 40%;
-    text-align: left;
-    vertical-align: top;
-}
-table.collection .badgeimage,
-table.collection .status {
+table.collection td.awards {
     width: 15%;
     text-align: center;
     vertical-align: middle;
 }
-table.collection .description {
+table.collection td.criteria {
+    width: 40%;
+    text-align: left;
+    vertical-align: top;
+}
+table.collection td.status {
+    width: 15%;
+    text-align: center;
+    vertical-align: middle;
+}
+table.collection td.description {
     width: 25%;
     text-align: left;
 }
-table.collection .actions {
+table.collection td.actions {
     width: 11em;
     text-align: center;
     vertical-align: middle;
 }
-
 a.criteria-action {
     padding: 0 3px;
     float: right;
@@ -2359,6 +2364,7 @@ h3.sectionname .inplaceeditable.inplaceeditingon .editinstructions {
         opacity: 0;
         visibility: hidden;
         position: absolute;
+        /*rtl:ignore*/
         left: 50%;
         top: ~"calc(-50% - 5px)";
         transform: translate(-50%, -50%);

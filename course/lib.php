@@ -2337,6 +2337,7 @@ function create_course($data, $editoroptions = NULL) {
         'other' => array('shortname' => $course->shortname,
             'fullname' => $course->fullname)
     ));
+
     $event->trigger();
 
     // Setup the blocks
@@ -2429,6 +2430,14 @@ function update_course($data, $editoroptions = NULL) {
                 // make sure when moving into hidden category the course is hidden automatically
                 $data->visible = 0;
             }
+        }
+    }
+
+    // Set newsitems to 0 if format does not support announcements.
+    if (isset($data->format)) {
+        $newcourseformat = course_get_format((object)['format' => $data->format]);
+        if (!$newcourseformat->supports_news()) {
+            $data->newsitems = 0;
         }
     }
 
@@ -3606,6 +3615,7 @@ function course_get_tagged_course_modules($tag, $exclusivemode = false, $fromcon
                 JOIN {course} c ON cm.course = c.id
                 JOIN {context} ctx ON ctx.instanceid = cm.id AND ctx.contextlevel = :coursemodulecontextlevel
                WHERE tt.itemtype = :itemtype AND tt.tagid = :tagid AND tt.component = :component
+                AND cm.deletioninprogress = 0
                 AND c.id %COURSEFILTER% AND cm.id %ITEMFILTER%";
 
     $params = array('itemtype' => 'course_modules', 'tagid' => $tag->id, 'component' => 'core',
@@ -3705,7 +3715,19 @@ function course_get_user_navigation_options($context, $course = null) {
         $sitecontext = context_system::instance();
     }
 
-    $options = new stdClass;
+    // Sets defaults for all options.
+    $options = (object) [
+        'badges' => false,
+        'blogs' => false,
+        'calendar' => false,
+        'competencies' => false,
+        'grades' => false,
+        'notes' => false,
+        'participants' => false,
+        'search' => false,
+        'tags' => false,
+    ];
+
     $options->blogs = !empty($CFG->enableblogs) &&
                         ($CFG->bloglevel == BLOG_GLOBAL_LEVEL ||
                         ($CFG->bloglevel == BLOG_SITE_LEVEL and ($isloggedin and !$isguestuser)))
@@ -3777,7 +3799,7 @@ function course_get_user_administration_options($course, $context) {
     $options->reports = has_capability('moodle/site:viewreports', $context);
     $options->backup = has_capability('moodle/backup:backupcourse', $context);
     $options->restore = has_capability('moodle/restore:restorecourse', $context);
-    $options->files = $course->legacyfiles == 2 and has_capability('moodle/course:managefiles', $context);
+    $options->files = ($course->legacyfiles == 2 && has_capability('moodle/course:managefiles', $context));
 
     if (!$isfrontpage) {
         $options->tags = has_capability('moodle/course:tag', $context);
@@ -3933,7 +3955,7 @@ function course_check_module_updates_since($cm, $from, $fileareas = array(), $fi
     }
     if (!empty($fileareas) and (empty($filter) or in_array('fileareas', $filter))) {
         $fs = get_file_storage();
-        $files = $fs->get_area_files($context->id, $component, $fileareas, false, "filearea, timemodified DESC", true, $from);
+        $files = $fs->get_area_files($context->id, $component, $fileareas, false, "filearea, timemodified DESC", false, $from);
         foreach ($fileareas as $filearea) {
             $updates->{$filearea . 'files'} = (object) array('updated' => false);
         }
@@ -3991,6 +4013,7 @@ function course_check_module_updates_since($cm, $from, $fileareas = array(), $fi
     // Check comments.
     if (plugin_supports('mod', $cm->modname, FEATURE_COMMENT) and (empty($filter) or in_array('comments', $filter))) {
         $updates->comments = (object) array('updated' => false);
+        require_once($CFG->dirroot . '/comment/lib.php');
         require_once($CFG->dirroot . '/comment/locallib.php');
         $manager = new comment_manager();
         $comments = $manager->get_component_comments_since($course, $context, $component, $from, $cm);

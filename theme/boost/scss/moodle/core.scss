@@ -9,9 +9,11 @@
 .context-header-settings-menu,
 .region-main-settings-menu {
     float: right;
-    width: 4em;
+    width: auto;
+    max-width: 4em;
     height: 2em;
     display: block;
+    margin-top: 4px;
 }
 
 .context-header-settings-menu .dropdown-toggle > .icon,
@@ -121,6 +123,10 @@ a.dimmed_text:visited,
     @extend .text-info;
 }
 
+.fitem.advanced .text-info {
+    font-weight: bold;
+}
+
 .reportlink {
     text-align: right;
 }
@@ -131,6 +137,7 @@ a.autolink.glossary:hover {
 /* Block which is hidden if javascript enabled, prevents fickering visible when JS from footer used! */
 .collapsibleregioncaption {
     white-space: nowrap;
+    min-height: $line-height-base * $font-size-base;
 }
 
 .pagelayout-mydashboard.jsenabled .collapsibleregioncaption {
@@ -155,6 +162,7 @@ a.autolink.glossary:hover {
 
 .jsenabled .collapsibleregion {
     overflow: hidden;
+    box-sizing: content-box;
 }
 
 .jsenabled .collapsed .collapsibleregioninner {
@@ -297,7 +305,8 @@ form.popupform div {
 }
 
 span.hide,
-div.hide {
+div.hide,
+.hidden {
     display: none;
 }
 // Accessibility: Skip block link, for keyboard-only users.
@@ -979,12 +988,7 @@ tr.flagged-tag a {
 .smartselect.compactmenu .smartselect_submenuitem:hover > .smartselect_menuitem_label {
     font-weight: bold;
 }
-/**
-* Registration
-*/
-#page-admin-registration-register .registration_textfield {
-    width: 300px;
-}
+
 /**
 * Enrol
 */
@@ -1028,11 +1032,17 @@ tr.flagged-tag a {
     margin-right: 30px;
 }
 
-.userenrolment .col_role .role,
 .userenrolment .col_group .group {
     float: left;
     padding: 3px;
     margin: 3px;
+    white-space: nowrap;
+}
+
+.userenrolment .col_role .role {
+    float: left;
+    padding: 0 3px 3px;
+    margin: 0 3px 3px;
     white-space: nowrap;
 }
 
@@ -1064,8 +1074,8 @@ tr.flagged-tag a {
 
 .userenrolment .col_enrol .enrolment {
     float: left;
-    padding: 3px;
-    margin: 3px;
+    padding: 0 3px 3px;
+    margin: 0 3px 3px;
 }
 
 .userenrolment .col_enrol .enrolment a {
@@ -1082,14 +1092,6 @@ tr.flagged-tag a {
     #filterform {
         @extend .card;
         @extend .card-block;
-    }
-
-    .user-enroller-panel .uep-search-results .user .details {
-        width: 237px;
-    }
-
-    .user-enroller-panel .uep-search-results .cohort .details {
-        width: 237px;
     }
 }
 
@@ -1266,6 +1268,10 @@ body#page-lib-editor-tinymce-plugins-moodlemedia-preview {
 }
 
 .moodle-dialogue-base .moodle-dialogue-wrap .moodle-dialogue-hd .yui3-widget-buttons {
+    /*rtl:raw:
+        left: 0;
+        right: auto;
+    */
     padding: $spacer;
 }
 
@@ -1290,18 +1296,6 @@ body#page-lib-editor-tinymce-plugins-moodlemedia-preview {
     right: 0;
     margin: 0;
     border: 0;
-}
-
-.moodle-dialogue-confirm .confirmation-dialogue {
-    text-align: center;
-}
-
-.moodle-dialogue-confirm .confirmation-dialogue input {
-    text-align: center;
-}
-
-.moodle-dialogue-exception .moodle-exception-message {
-    text-align: center;
 }
 
 .moodle-dialogue-exception .moodle-exception-param label {
@@ -1350,6 +1344,9 @@ body#page-lib-editor-tinymce-plugins-moodlemedia-preview {
 
 .moodle-dialogue-confirm .confirmation-message {
     margin: 0.5em 1em;
+}
+.moodle-dialogue-confirm .confirmation-buttons {
+    text-align: right;
 }
 
 .moodle-dialogue-confirm .confirmation-dialogue input {
@@ -1445,7 +1442,7 @@ body#page-lib-editor-tinymce-plugins-moodlemedia-preview {
 /* Center the submit buttons within the area */
 .choosercontainer #chooseform .submitbuttons {
     padding: 0.7em 0;
-    text-align: center;
+    text-align: right;
 }
 /* Fixed for safari browser on iPhone4S with ios7@mixin */
 
@@ -1657,41 +1654,6 @@ table.collection {
     @extend .table-striped;
 }
 
-table.collection .name {
-    text-align: left;
-    vertical-align: middle;
-}
-
-table.collection .awards {
-    width: 10%;
-    text-align: center;
-    vertical-align: middle;
-}
-
-table.collection .criteria {
-    width: 40%;
-    text-align: left;
-    vertical-align: top;
-}
-
-table.collection .badgeimage,
-table.collection .status {
-    width: 15%;
-    text-align: center;
-    vertical-align: middle;
-}
-
-table.collection .description {
-    width: 25%;
-    text-align: left;
-}
-
-table.collection .actions {
-    width: 11em;
-    text-align: center;
-    vertical-align: middle;
-}
-
 a.criteria-action {
     padding: 0 3px;
     float: right;
@@ -1758,6 +1720,7 @@ ul.badges {
     display: inline-block;
     vertical-align: top;
     margin-top: 17px;
+    margin-bottom: 20px;
 
     .expireimage {
         width: 100px;
@@ -1771,9 +1734,10 @@ ul.badges {
 
     .singlebutton {
         padding-top: 5px;
+        display: block;
 
-        input {
-            margin-left: 0;
+        button {
+            margin-left: 4px;
         }
     }
 }
@@ -1900,11 +1864,17 @@ img#persona_signin {
 #page-header {
     .logo {
         margin: $spacer 0;
+        img {
+            max-height: 75px;
+        }
     }
 }
 
 /** Header. */
 header {
+    .logo img {
+        max-height: 35px;
+    }
     .collapse.in,
     .collapsing {
         display: block;
@@ -1922,12 +1892,12 @@ header {
 
     .page-header-image,
     .page-header-headings {
+        float: left;
         display: block;
         position: relative;
     }
 
     .page-header-image {
-        float: left;
         margin-right: 1em;
         margin-bottom: 1em;
     }
@@ -2105,6 +2075,7 @@ ul {
         opacity: 0;
         visibility: hidden;
         position: absolute;
+        /*rtl:ignore*/
         left: 50%;
         top: calc(-50% - 5px);
         transform: translate(-50%, -50%);
@@ -2180,5 +2151,17 @@ $footer-link-color: $brand-primary !default;
 .competency-tree {
     ul {
         padding-left: 1.5rem;
+    }
+}
+
+.sr-only-focusable {
+    &:active,
+    &:focus {
+        z-index: $zindex-navbar-fixed + 1;
+        position: fixed;
+        background: #fff;
+        padding: 7px;
+        left: 0;
+        top: 0;
     }
 }

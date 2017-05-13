@@ -97,16 +97,57 @@ class core_media_manager {
     /** @var core_media_manager caches a singleton instance */
     static protected $instance;
 
+    /** @var moodle_page page this instance was initialised for */
+    protected $page;
+
     /**
      * Returns a singleton instance of a manager
      *
+     * Note as of Moodle 3.2.2, this will call setup for you.
+     *
      * @return core_media_manager
      */
-    public static function instance() {
-        if (self::$instance === null) {
-            self::$instance = new self();
+    public static function instance($page = null) {
+        // Use the passed $page if given, otherwise the $PAGE global.
+        if (!$page) {
+            global $PAGE;
+            $page = $PAGE;
+        }
+        if (self::$instance === null || ($page && self::$instance->page !== $page)) {
+            self::$instance = new self($page);
         }
         return self::$instance;
+    }
+
+    /**
+     * Construct a new core_media_manager instance
+     *
+     * @param moodle_page $page The page we are going to add requirements to.
+     * @see core_media_manager::instance()
+     */
+    protected function __construct($page) {
+        if ($page) {
+            $this->page = $page;
+            $players = $this->get_players();
+            foreach ($players as $player) {
+                $player->setup($page);
+            }
+        } else {
+            debugging('Could not determine the $PAGE. Media plugins will not be set up', DEBUG_DEVELOPER);
+        }
+    }
+
+    /**
+     * Setup page requirements.
+     *
+     * This should must only be called once per page request.
+     *
+     * This function will be deprecated in Moodle 3.3, The setup is now done in ::instance() so there is no need to call this.
+     * @param moodle_page $page The page we are going to add requirements to.
+     * @see core_media_manager::instance()
+     */
+    public function setup($page) {
+        // No need to call ::instance from here, because the instance has already be set up.
     }
 
     /**
@@ -128,42 +169,17 @@ class core_media_manager {
     protected function get_players() {
         // Save time by only building the list once.
         if (!$this->players) {
-            // Get raw list of players.
-            $allplayers = $this->get_players_raw();
             $sortorder = \core\plugininfo\media::get_enabled_plugins();
 
             $this->players = [];
-            foreach ($sortorder as $key) {
-                if (array_key_exists($key, $allplayers)) {
-                    $this->players[] = $allplayers[$key];
+            foreach ($sortorder as $name) {
+                $classname = "media_" . $name . "_plugin";
+                if (class_exists($classname)) {
+                    $this->players[] = new $classname();
                 }
             }
         }
         return $this->players;
-    }
-
-    /**
-     * Obtains a raw list of player objects that includes objects regardless
-     * of whether they are disabled or not, and without sorting.
-     *
-     * You can override this in a subclass if you need to add additional_
-     * players.
-     *
-     * The return array is be indexed by player name to make it easier to
-     * remove players in a subclass.
-     *
-     * @return array $players Array of core_media_player objects in any order
-     */
-    protected function get_players_raw() {
-        $plugins = core_plugin_manager::instance()->get_plugins_of_type('media');
-        $rv = [];
-        foreach ($plugins as $name => $dir) {
-            $classname = "media_" . $name . "_plugin";
-            if (class_exists($classname)) {
-                $rv[$name] = new $classname();
-            }
-        }
-        return $rv;
     }
 
     /**

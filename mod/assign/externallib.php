@@ -815,7 +815,7 @@ class mod_assign_external extends external_api {
                     new external_single_structure(
                         array(
                             'name' => new external_value(PARAM_TEXT, 'field name'),
-                            'description' => new external_value(PARAM_TEXT, 'field description'),
+                            'description' => new external_value(PARAM_RAW, 'field description'),
                             'text' => new external_value (PARAM_RAW, 'field value'),
                             'format' => new external_format_value ('text')
                         )
@@ -895,7 +895,7 @@ class mod_assign_external extends external_api {
                             'locked'           => new external_value(PARAM_INT, 'locked', VALUE_OPTIONAL),
                             'mailed'           => new external_value(PARAM_INT, 'mailed', VALUE_OPTIONAL),
                             'extensionduedate' => new external_value(PARAM_INT, 'extension due date', VALUE_OPTIONAL),
-                            'workflowstate'    => new external_value(PARAM_TEXT, 'marking workflow state', VALUE_OPTIONAL),
+                            'workflowstate'    => new external_value(PARAM_ALPHA, 'marking workflow state', VALUE_OPTIONAL),
                             'allocatedmarker'  => new external_value(PARAM_INT, 'allocated marker', VALUE_OPTIONAL)
                         )
                     )
@@ -1147,7 +1147,7 @@ class mod_assign_external extends external_api {
                             'locked'           => new external_value(PARAM_INT, 'locked'),
                             'mailed'           => new external_value(PARAM_INT, 'mailed'),
                             'extensionduedate' => new external_value(PARAM_INT, 'extension due date'),
-                            'workflowstate'    => new external_value(PARAM_TEXT, 'marking workflow state', VALUE_OPTIONAL),
+                            'workflowstate'    => new external_value(PARAM_ALPHA, 'marking workflow state', VALUE_OPTIONAL),
                             'allocatedmarker'  => new external_value(PARAM_INT, 'allocated marker')
                         )
                     )
@@ -2568,7 +2568,10 @@ class mod_assign_external extends external_api {
 
         $assign->require_view_grades();
 
-        $participants = $assign->list_participants_with_filter_status_and_group($params['groupid']);
+        $participants = array();
+        if (groups_group_visible($params['groupid'], $course, $cm)) {
+            $participants = $assign->list_participants_with_filter_status_and_group($params['groupid']);
+        }
 
         $userfields = user_get_default_fields();
         if (!$params['includeenrolments']) {
@@ -2766,7 +2769,9 @@ class mod_assign_external extends external_api {
         // Skip the expensive lookup of user detail if we're blind marking or the caller
         // hasn't asked for user details to be embedded.
         if (!$assign->is_blind_marking() && $embeduser) {
-            $return['user'] = user_get_user_details($participant, $course);
+            if ($userdetails = user_get_user_details($participant, $course)) {
+                $return['user'] = $userdetails;
+            }
         }
 
         return $return;

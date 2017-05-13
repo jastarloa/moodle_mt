@@ -38,6 +38,20 @@ function Tour(config) {
 Tour.prototype.tourName;
 
 /**
+ * The name of the tour storage key.
+ *
+ * @property    {String}    storageKey
+ */
+Tour.prototype.storageKey;
+
+/**
+ * The session storage object
+ *
+ * @property    {Storage}   storage
+ */
+Tour.prototype.storage;
+
+/**
  * The original configuration as passed into the constructor.
  *
  * @property    {Object}    originalConfiguration
@@ -119,6 +133,14 @@ Tour.prototype.init = function (config) {
 
     // Apply configuration.
     this.configure.apply(this, arguments);
+
+    try {
+        this.storage = window.sessionStorage;
+        this.storageKey = 'tourstate_' + this.tourName;
+    } catch (e) {
+        this.storage = false;
+        this.storageKey = '';
+    }
 
     return this;
 };
@@ -280,6 +302,15 @@ Tour.prototype.getCurrentStepNumber = function () {
  */
 Tour.prototype.setCurrentStepNumber = function (stepNumber) {
     this.currentStepNumber = stepNumber;
+    if (this.storage) {
+        try {
+            this.storage.setItem(this.storageKey, stepNumber);
+        } catch (e) {
+            if (e.code === DOMException.QUOTA_EXCEEDED_ERR) {
+                this.storage.removeItem(this.storageKey);
+            }
+        }
+    }
 };
 
 /**
@@ -521,6 +552,10 @@ Tour.prototype.normalizeStepConfig = function (stepConfig) {
         attachPoint: 'after'
     }, stepConfig);
 
+    if (stepConfig.attachTo) {
+        stepConfig.attachTo = $(stepConfig.attachTo).first();
+    }
+
     return stepConfig;
 };
 
@@ -612,7 +647,7 @@ Tour.prototype.processStepListeners = function (stepConfig) {
             args: ['click', $.proxy(function (e) {
                 if ($(e.target).parents('[data-flexitour="container"]').length === 0) {
                     // Ignore clicks when they are in the flexitour.
-                    window.setTimeout($.proxy(this.next, this), 100);
+                    window.setTimeout($.proxy(this.next, this), 500);
                 }
             }, this)]
         });
@@ -739,10 +774,10 @@ Tour.prototype.addStepToPage = function (stepConfig) {
         this.positionBackdrop(stepConfig);
 
         if (stepConfig.attachPoint === 'append') {
-            $(stepConfig.attachTo).append(currentStepNode);
+            stepConfig.attachTo.append(currentStepNode);
             this.currentStepNode = currentStepNode;
         } else {
-            this.currentStepNode = currentStepNode.insertAfter($(stepConfig.attachTo));
+            this.currentStepNode = currentStepNode.insertAfter(stepConfig.attachTo);
         }
 
         // Ensure that the step node is positioned.
@@ -754,15 +789,15 @@ Tour.prototype.addStepToPage = function (stepConfig) {
 
         animationTarget.animate({
             scrollTop: this.calculateScrollTop(stepConfig)
-        }).promise().then($.proxy(function () {
+        }).promise().then(function () {
             this.positionStep(stepConfig);
             this.revealStep(stepConfig);
-        }, this));
+        }.bind(this));
     } else if (stepConfig.orphan) {
         stepConfig.isOrphan = true;
 
         // This will be appended to the body instead.
-        stepConfig.attachTo = 'body';
+        stepConfig.attachTo = $('body').first();
         stepConfig.attachPoint = 'append';
 
         // Add the backdrop.
@@ -772,17 +807,26 @@ Tour.prototype.addStepToPage = function (stepConfig) {
         currentStepNode.addClass('orphan');
 
         // It lives in the body.
-        $(stepConfig.attachTo).append(currentStepNode);
+        stepConfig.attachTo.append(currentStepNode);
         this.currentStepNode = currentStepNode;
 
         this.currentStepNode.offset(this.calculateStepPositionInPage());
+        this.currentStepNode.css('position', 'fixed');
 
         this.currentStepPopper = new Popper($('body'), this.currentStepNode[0], {
             removeOnDestroy: true,
             placement: stepConfig.placement + '-start',
             arrowElement: '[data-role="arrow"]',
             // Empty the modifiers. We've already placed the step and don't want it moved.
-            modifiers: []
+            modifiers: {
+                hide: {
+                    enabled: false
+                },
+                applyStyle: {
+                    onLoad: null,
+                    enabled: false
+                }
+            }
         });
 
         this.revealStep(stepConfig);
@@ -802,7 +846,7 @@ Tour.prototype.revealStep = function (stepConfig) {
         window.setTimeout($.proxy(function () {
             // After a brief delay, focus again.
             // There seems to be an issue with Jaws where it only reads the dialogue title initially.
-            // This second focus causes it to read the full dialogue.
+            // This second focus helps it to read the full dialogue.
             if (this.currentStepNode) {
                 this.currentStepNode.focus();
             }
@@ -944,6 +988,16 @@ Tour.prototype.handleKeyDown = function (e) {
  * @chainable
  */
 Tour.prototype.startTour = function (startAt) {
+    if (this.storage && typeof startAt === 'undefined') {
+        var storageStartValue = this.storage.getItem(this.storageKey);
+        if (storageStartValue) {
+            var storageStartAt = parseInt(storageStartValue, 10);
+            if (storageStartAt <= this.steps.length) {
+                startAt = storageStartAt;
+            }
+        }
+    }
+
     if (typeof startAt === 'undefined') {
         startAt = this.getCurrentStepNumber();
     }
@@ -1120,15 +1174,13 @@ Tour.prototype.calculateScrollTop = function (stepConfig) {
 Tour.prototype.calculateStepPositionInPage = function () {
     var viewportHeight = $(window).height();
     var stepHeight = this.currentStepNode.height();
-    var scrollTop = $(window).scrollTop();
 
     var viewportWidth = $(window).width();
     var stepWidth = this.currentStepNode.width();
-    var scrollLeft = $(window).scrollLeft();
 
     return {
-        top: Math.ceil(scrollTop + (viewportHeight - stepHeight) / 2),
-        left: Math.ceil(scrollLeft + (viewportWidth - stepWidth) / 2)
+        top: Math.ceil((viewportHeight - stepHeight) / 2),
+        left: Math.ceil((viewportWidth - stepWidth) / 2)
     };
 };
 
@@ -1166,18 +1218,29 @@ Tour.prototype.positionStep = function (stepConfig) {
     }
 
     var target = this.getStepTarget(stepConfig);
+    var config = {
+        placement: stepConfig.placement + '-start',
+        removeOnDestroy: true,
+        modifiers: {
+            flip: {
+                behaviour: flipBehavior
+            },
+            arrow: {
+                element: '[data-role="arrow"]'
+            }
+        }
+    };
+
+    var boundaryElement = target.closest('section');
+    if (boundaryElement.length) {
+        config.boundariesElement = boundaryElement[0];
+    }
+
     var background = $('[data-flexitour="step-background"]');
     if (background.length) {
         target = background;
     }
-
-    this.currentStepPopper = new Popper(target, content[0], {
-        placement: stepConfig.placement + '-start',
-        removeOnDestroy: true,
-        flipBehavior: flipBehavior,
-        arrowElement: '[data-role="arrow"]',
-        modifiers: ['shift', 'offset', 'preventOverflow', 'keepTogether', this.centerPopper, 'arrow', 'flip', 'applyStyle']
-    });
+    this.currentStepPopper = new Popper(target, content[0], config);
 
     return this;
 };
@@ -1196,9 +1259,9 @@ Tour.prototype.positionBackdrop = function (stepConfig) {
 
         if (stepConfig.zIndex) {
             if (stepConfig.attachPoint === 'append') {
-                $(stepConfig.attachTo).append(backdrop);
+                stepConfig.attachTo.append(backdrop);
             } else {
-                backdrop.insertAfter($(stepConfig.attachTo));
+                backdrop.insertAfter(stepConfig.attachTo);
             }
         } else {
             $('body').append(backdrop);
@@ -1259,10 +1322,10 @@ Tour.prototype.positionBackdrop = function (stepConfig) {
 
             if (stepConfig.zIndex) {
                 if (stepConfig.attachPoint === 'append') {
-                    $(stepConfig.attachTo).append(background);
+                    stepConfig.attachTo.append(background);
                 } else {
-                    fader.insertAfter($(stepConfig.attachTo));
-                    background.insertAfter($(stepConfig.attachTo));
+                    fader.insertAfter(stepConfig.attachTo);
+                    background.insertAfter(stepConfig.attachTo);
                 }
             } else {
                 $('body').append(fader);
@@ -1363,25 +1426,14 @@ Tour.prototype.calculatePosition = function (elem) {
     return null;
 };
 
-Tour.prototype.centerPopper = function (data) {
-    if (!this.isModifierRequired(Tour.prototype.centerPopper, this.modifiers.keepTogether)) {
-        console.warn('WARNING: keepTogether modifier is required by centerPopper modifier in order to work, be sure to include it before arrow!');
-        return data;
-    }
-
-    var placement = data.placement.split('-')[0];
-    var reference = data.offsets.reference;
-    var isVertical = ['left', 'right'].indexOf(placement) !== -1;
-
-    var len = isVertical ? 'height' : 'width';
-    var side = isVertical ? 'top' : 'left';
-
-    data.offsets.popper[side] += Math.max(reference[len] / 2 - data.offsets.popper[len] / 2, 0);
-
-    return data;
-};
-
-Tour.prototype.accessibilityShow = function (stepConfig) {
+/**
+ * Perform accessibility changes for step shown.
+ *
+ * This will add aria-hidden="true" to all siblings and parent siblings.
+ *
+ * @method  accessibilityShow
+ */
+Tour.prototype.accessibilityShow = function () {
     var stateHolder = 'data-has-hidden';
     var attrName = 'aria-hidden';
     var hideFunction = function hideFunction(child) {
@@ -1409,6 +1461,13 @@ Tour.prototype.accessibilityShow = function (stepConfig) {
     });
 };
 
+/**
+ * Perform accessibility changes for step hidden.
+ *
+ * This will remove any newly added aria-hidden="true".
+ *
+ * @method  accessibilityHide
+ */
 Tour.prototype.accessibilityHide = function () {
     var stateHolder = 'data-has-hidden';
     var attrName = 'aria-hidden';

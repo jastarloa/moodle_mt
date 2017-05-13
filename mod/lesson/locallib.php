@@ -618,7 +618,7 @@ function lesson_get_media_html($lesson, $context) {
 
     $extension = resourcelib_get_extension($url->out(false));
 
-    $mediamanager = core_media_manager::instance();
+    $mediamanager = core_media_manager::instance($PAGE);
     $embedoptions = array(
         core_media_manager::OPTION_TRUSTED => true,
         core_media_manager::OPTION_BLOCK => true
@@ -2955,7 +2955,7 @@ abstract class lesson_page extends lesson_base {
         for ($i = 0; $i < $this->lesson->maxanswers; $i++) {
             $answer = clone($newanswer);
 
-            if (!empty($properties->answer_editor[$i])) {
+            if (isset($properties->answer_editor[$i])) {
                 if (is_array($properties->answer_editor[$i])) {
                     // Multichoice and true/false pages have an HTML editor.
                     $answer->answer = $properties->answer_editor[$i]['text'];

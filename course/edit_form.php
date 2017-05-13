@@ -219,8 +219,9 @@ class course_edit_form extends moodleform {
 
         $options = range(0, 10);
         $mform->addElement('select', 'newsitems', get_string('newsitemsnumber'), $options);
-        $mform->addHelpButton('newsitems', 'newsitemsnumber');
+        $courseconfig = get_config('moodlecourse');
         $mform->setDefault('newsitems', $courseconfig->newsitems);
+        $mform->addHelpButton('newsitems', 'newsitemsnumber');
 
         $mform->addElement('selectyesno', 'showgrades', get_string('showgrades'));
         $mform->addHelpButton('showgrades', 'showgrades');
@@ -371,6 +372,11 @@ class course_edit_form extends moodleform {
             for ($i = 0; $i < count($elements); $i++) {
                 $mform->insertElementBefore($mform->removeElement($elements[$i]->getName(), false),
                         'addcourseformatoptionshere');
+            }
+
+            // Remove newsitems element if format does not support news.
+            if (!$courseformat->supports_news()) {
+                $mform->removeElement('newsitems');
             }
         }
     }

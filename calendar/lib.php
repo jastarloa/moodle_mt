@@ -1715,10 +1715,11 @@ function calendar_format_event_time($event, $now, $linkparams = null, $usecommon
                 $url = calendar_get_link_href(new moodle_url(CALENDAR_URL . 'view.php', $linkparams), 0, 0, 0, $endtime);
                 $eventtime = $timestart . ' <strong>&raquo;</strong> ' . html_writer::link($url, $dayend) . $timeend;
             } else {
-                $url = calendar_get_link_href(new moodle_url(CALENDAR_URL . 'view.php', $linkparams), 0, 0, 0, $endtime);
+                // The event is in the future, print start and end  links.
+                $url = calendar_get_link_href(new moodle_url(CALENDAR_URL . 'view.php', $linkparams), 0, 0, 0, $starttime);
                 $eventtime  = html_writer::link($url, $daystart) . $timestart . ' <strong>&raquo;</strong> ';
 
-                $url = calendar_get_link_href(new moodle_url(CALENDAR_URL . 'view.php', $linkparams),  0, 0, 0, $starttime);
+                $url = calendar_get_link_href(new moodle_url(CALENDAR_URL . 'view.php', $linkparams),  0, 0, 0, $endtime);
                 $eventtime .= html_writer::link($url, $dayend) . $timeend;
             }
         }
@@ -3034,7 +3035,7 @@ function calendar_add_icalendar_event($event, $courseid, $subscriptionid, $timez
     $eventrecord->courseid = $sub->courseid;
     $eventrecord->eventtype = $sub->eventtype;
 
-    if ($updaterecord = $DB->get_record('event', array('uuid' => $eventrecord->uuid))) {
+    if ($updaterecord = $DB->get_record('event', array('uuid' => $eventrecord->uuid, 'subscriptionid' => $eventrecord->subscriptionid))) {
         $eventrecord->id = $updaterecord->id;
         $return = CALENDAR_IMPORT_EVENT_UPDATED; // Update.
     } else {
@@ -3344,4 +3345,26 @@ function calendar_get_calendar_context($subscription) {
         $context = context_user::instance($subscription->userid);
     }
     return $context;
+}
+
+/**
+ * Implements callback user_preferences, whitelists preferences that users are allowed to update directly
+ *
+ * Used in {@see core_user::fill_preferences_cache()}, see also {@see useredit_update_user_preference()}
+ *
+ * @return array
+ */
+function core_calendar_user_preferences() {
+    $preferences = [];
+    $preferences['calendar_timeformat'] = array('type' => PARAM_NOTAGS, 'null' => NULL_NOT_ALLOWED, 'default' => '0',
+        'choices' => array('0', CALENDAR_TF_12, CALENDAR_TF_24)
+    );
+    $preferences['calendar_startwday'] = array('type' => PARAM_INT, 'null' => NULL_NOT_ALLOWED, 'default' => 0,
+        'choices' => array(0, 1, 2, 3, 4, 5, 6));
+    $preferences['calendar_maxevents'] = array('type' => PARAM_INT, 'choices' => range(1, 20));
+    $preferences['calendar_lookahead'] = array('type' => PARAM_INT, 'null' => NULL_NOT_ALLOWED, 'default' => 365,
+        'choices' => array(365, 270, 180, 150, 120, 90, 60, 30, 21, 14, 7, 6, 5, 4, 3, 2, 1));
+    $preferences['calendar_persistflt'] = array('type' => PARAM_INT, 'null' => NULL_NOT_ALLOWED, 'default' => 0,
+        'choices' => array(0, 1));
+    return $preferences;
 }
